@@ -21,14 +21,7 @@ import sys
 random_state_trajs_fishing_info = 0
 random_state_trajs_fishing = 0.1
 min_duration_trajectory = 10  # in minutes
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
-=======
-
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
 
 def load_dataset():
     # Dataset processing and filter
@@ -112,18 +105,8 @@ def load_gdf(df_gfw):
     return gdf
 
 # Filter GDF to equal data
-<<<<<<< HEAD
-<<<<<<< HEAD
 
 
-=======
-
-
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
-=======
-
-
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
 def filter_gdf(gdf, len_gdf_only_fishing, len_gdf_no_fishing):
 
     gdf_only_fishing = gdf[gdf['vesselType'] ==
@@ -485,26 +468,10 @@ def logistic_regression(x, y, x_test, y_test):
         precision_recall_fscore_support(y_true, y_pred, average=None))
     precision_recall_fscore_macro = precision_recall_fscore_support(
         y_true, y_pred, average='macro')
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
-    return model.best_score_, precision_recall_fscore[:, 0], precision_recall_fscore[:, 1], precision_recall_fscore_macro, accuracy, (end_time-start_time)
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
-=======
-
-    return model.best_score_, precision_recall_fscore[:, 0], precision_recall_fscore[:, 1], precision_recall_fscore_macro, accuracy, (end_time-start_time)
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
 
     return model.best_score_, precision_recall_fscore[:, 0], precision_recall_fscore[:, 1], precision_recall_fscore_macro, accuracy, (end_time-start_time)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 
-=======
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
-=======
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
 # Decision Tree in Trajectory-base data
 def decision_tree(x, y, x_test, y_test):
     from sklearn import decomposition, datasets
@@ -583,8 +550,6 @@ def decision_tree(x, y, x_test, y_test):
     print("DT: ", precision_recall_fscore_support(
         y_true, y_pred, average='macro'))
     print("DT: ", precision_recall_fscore_support(y_true, y_pred, average=None))
-<<<<<<< HEAD
-<<<<<<< HEAD
 
     precision_recall_fscore = np.array(
         precision_recall_fscore_support(y_true, y_pred, average=None))
@@ -593,26 +558,6 @@ def decision_tree(x, y, x_test, y_test):
 
     return model.best_score_, precision_recall_fscore[:, 0], precision_recall_fscore[:, 1], precision_recall_fscore_macro, accuracy, (end_time-start_time)
 
-=======
-
-    precision_recall_fscore = np.array(
-        precision_recall_fscore_support(y_true, y_pred, average=None))
-    precision_recall_fscore_macro = precision_recall_fscore_support(
-        y_true, y_pred, average='macro')
-
-    return model.best_score_, precision_recall_fscore[:, 0], precision_recall_fscore[:, 1], precision_recall_fscore_macro, accuracy, (end_time-start_time)
-
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
-=======
-
-    precision_recall_fscore = np.array(
-        precision_recall_fscore_support(y_true, y_pred, average=None))
-    precision_recall_fscore_macro = precision_recall_fscore_support(
-        y_true, y_pred, average='macro')
-
-    return model.best_score_, precision_recall_fscore[:, 0], precision_recall_fscore[:, 1], precision_recall_fscore_macro, accuracy, (end_time-start_time)
-
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
 
 # SVM in Trajectory-base data
 def svm(x, y, x_test, y_test):
@@ -695,25 +640,16 @@ def random_forest(x, y, x_test, y_test):
     from sklearn.model_selection import GridSearchCV
     from sklearn.preprocessing import StandardScaler
     from sklearn.metrics import accuracy_score
-<<<<<<< HEAD
 
     print("*** Random Forest")
 
     rf = RandomForestClassifier(max_depth=2, random_state=0)
 
-=======
-
-    print("*** Random Forest")
-
-    rf = RandomForestClassifier(max_depth=2, random_state=0)
-
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
     param_grid = {
         'max_depth': [2, 3, 4, 5],
         'criterion': ['gini', 'entropy', 'log_loss'],
         'n_estimators': [5, 10, 20, 30, 40, 50, 60, 70, 80, 100, 150, 200]
     }
-<<<<<<< HEAD
 
     model = GridSearchCV(rf, param_grid, cv=5, n_jobs=14)
     r = model.fit(x, y.values.ravel())
@@ -765,64 +701,8 @@ def random_forest(x, y, x_test, y_test):
         y_true, y_pred, average='macro')
 
     return model.best_score_, precision_recall_fscore[:, 0], precision_recall_fscore[:, 1], precision_recall_fscore_macro, accuracy, (end_time-start_time)
-=======
-
-    model = GridSearchCV(rf, param_grid, cv=5, n_jobs=14)
-    r = model.fit(x, y.values.ravel())
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
-
-    print("RF Best accuracy: ", model.best_score_)
-    print("RF Best parameters: ", model.best_params_)
-
-<<<<<<< HEAD
-=======
-    # results
-    start_time = time.time()
-    y_pred = model.predict(x_test)
-    end_time = time.time()
-    print("RF Execution time: ", (end_time-start_time))
-
-    from sklearn.metrics import confusion_matrix
-    y_true = y_test
-    cm = confusion_matrix(y_true, y_pred)
-    print("RF Confusion Matrix: \n", cm)
-
-    accuracy = accuracy_score(y_true, y_pred)
-    print("RF TEST accuracy: ", accuracy)
-
-    import seaborn as sn
-    import pandas as pd
-    import matplotlib.pyplot as plt
-
-    group_names = ['True Fishing', 'False Fishing',
-                   'False Sailing', 'True Sailing']
-    group_counts = ["{0:0.0f}".format(value) for value in
-                    cm.flatten()]
-    group_percentages = ["{0:.2%}".format(value) for value in
-                         cm.flatten()/np.sum(cm)]
-    labels = [f"{v1}\n{v2}\n{v3}" for v1, v2, v3 in
-              zip(group_names, group_counts, group_percentages)]
-    labels = np.asarray(labels).reshape(2, 2)
-    plt.clf()
-    fig, ax = plt.subplots(figsize=(10, 8))
-    plot = sn.heatmap(cm, annot=labels, fmt='', cmap='Blues', ax=ax)
-    fig = plot.get_figure()
-    fig.savefig("rf_decision_tree_val.png")
-
-    # recall, precision, f1
-    from sklearn.metrics import precision_recall_fscore_support
-    print("RF: ", precision_recall_fscore_support(
-        y_true, y_pred, average='macro'))
-    print("RF: ", precision_recall_fscore_support(y_true, y_pred, average=None))
-    precision_recall_fscore = np.array(
-        precision_recall_fscore_support(y_true, y_pred, average=None))
-    precision_recall_fscore_macro = precision_recall_fscore_support(
-        y_true, y_pred, average='macro')
-
-    return model.best_score_, precision_recall_fscore[:, 0], precision_recall_fscore[:, 1], precision_recall_fscore_macro, accuracy, (end_time-start_time)
 
 
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
 # NN in data Trajectory-base data
 def nn(x, y, x_test, y_test, epochs):
     import gc
@@ -1194,26 +1074,10 @@ def draw_images(trajs_fishing, trajs_no_fishing):
     # no fishing
     img_test += filtered_trajs_nofishing[int(0.8*n_size): n_size]
     img_test_label += filtered_trajs_nofishing_label[int(0.8*n_size): n_size]
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
-    return np.array(img_train), np.array(img_train_label), np.array(img_test), np.array(img_test_label)
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
-=======
-
-    return np.array(img_train), np.array(img_train_label), np.array(img_test), np.array(img_test_label)
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
 
     return np.array(img_train), np.array(img_train_label), np.array(img_test), np.array(img_test_label)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 
-=======
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
-=======
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
 def cnn(trajs_fishing, trajs_no_fishing, epochs, load_images_dataset=False):
     from sklearn.preprocessing import LabelEncoder
     from keras.utils import to_categorical
@@ -1458,26 +1322,10 @@ def cnn(trajs_fishing, trajs_no_fishing, epochs, load_images_dataset=False):
     K.clear_session()
     gc.collect()
     del model
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
-    return best_accuracy, precision_recall_fscore[:, 0], precision_recall_fscore[:, 1], precision_recall_fscore_macro, accuracy, (end_time-start_time)
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
-=======
-
-    return best_accuracy, precision_recall_fscore[:, 0], precision_recall_fscore[:, 1], precision_recall_fscore_macro, accuracy, (end_time-start_time)
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
 
     return best_accuracy, precision_recall_fscore[:, 0], precision_recall_fscore[:, 1], precision_recall_fscore_macro, accuracy, (end_time-start_time)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 
-=======
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
-=======
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
 def speed_to_color(speed):
     ret = float(speed)
     return ret
@@ -1549,25 +1397,10 @@ def prepare_data_rnn(trajs_fishing, trajs_no_fishing):
     # no fishing
     test_x += filtered_trajs_nofishing[int(0.8*n_size): n_size]
     test_y += filtered_trajs_nofishing_label[int(0.8*n_size): n_size]
-<<<<<<< HEAD
-<<<<<<< HEAD
-
-    return np.array(train_x), np.array(train_y), np.array(test_x), np.array(test_y)
-=======
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
-
-    return np.array(train_x), np.array(train_y), np.array(test_x), np.array(test_y)
-
-<<<<<<< HEAD
-=======
-
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
-=======
 
     return np.array(train_x), np.array(train_y), np.array(test_x), np.array(test_y)
 
 
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
 # RNN in raw data
 def rnn(trajs_fishing, trajs_no_fishing, epochs):
     import tensorflow as tf
@@ -1795,22 +1628,11 @@ gdf_only_fishing, gdf_no_fishing, gdf_filtered = filter_gdf(
     gdf, len_gdf_only_fishing, len_gdf_no_fishing)
 
 # transform gdf in moving pandas trajectories. Or load from file the prior built.
-<<<<<<< HEAD
-<<<<<<< HEAD
 trajs_fishing, trajs_no_fishing = load_or_build_trajectories( len_gdf_only_fishing, load_trajectories_collection_from_file=True )
-=======
-trajs_fishing, trajs_no_fishing = load_or_build_trajectories(
-    len_gdf_only_fishing, load_trajectories_collection_from_file=False)
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
-=======
-trajs_fishing, trajs_no_fishing = load_or_build_trajectories(
-    len_gdf_only_fishing, load_trajectories_collection_from_file=False)
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
 
 # we have 12K fishing trajectories and 108K non fishing trajectories
-# limit trajs non fishing to avoid waste unnecessary processing; 
-trajs_no_fishing = mpd.TrajectoryCollection(
-    trajs_no_fishing.trajectories[:20000])
+# limit trajs non fishing to avoid waste unnecessary processing; <-------------------
+trajs_no_fishing = mpd.TrajectoryCollection( trajs_no_fishing.trajectories[:20000] )
 
 # trajs info fishing (trajectory-based data)
 traj_info_fishing = init_trajectory_data(trajs_fishing)
@@ -1875,55 +1697,6 @@ scoreTest.append(sTest)
 timePrediction.append(timep)
 timeTrain.append((end_time-start_time))
 print("LR train TIME: ", (end_time-start_time), " seconds")
-<<<<<<< HEAD
-print()
-
-start_time = time.time()
-sTrain, prfClassFish, prfClassNonFish, prfMacro, sTest, timep = decision_tree(
-    x, y, x_test, y_test)
-end_time = time.time()
-scoreTrain.append(sTrain)
-classFish.append(prfClassFish)
-classNonFish.append(prfClassNonFish)
-scoreMacro.append(prfMacro)
-scoreTest.append(sTest)
-timePrediction.append(timep)
-timeTrain.append((end_time-start_time))
-print("DT train TIME: ", (end_time-start_time), " seconds")
-<<<<<<< HEAD
-print()
-
-start_time = time.time()
-sTrain, prfClassFish, prfClassNonFish, prfMacro, sTest, timep = svm(x, y, x_test, y_test)
-end_time = time.time()
-scoreTrain.append  ( sTrain          )
-classFish.append   ( prfClassFish    )
-classNonFish.append( prfClassNonFish )
-scoreMacro.append  ( prfMacro  )
-scoreTest.append   ( sTest     )
-timePrediction.append( timep   )
-timeTrain.append((end_time-start_time))
-print("SVM train TIME: ", (end_time-start_time), " seconds" )
-print()
-
-=======
-print()
-
-start_time = time.time()
-sTrain, prfClassFish, prfClassNonFish, prfMacro, sTest, timep = svm(x, y, x_test, y_test)
-end_time = time.time()
-scoreTrain.append  ( sTrain          )
-classFish.append   ( prfClassFish    )
-classNonFish.append( prfClassNonFish )
-scoreMacro.append  ( prfMacro  )
-scoreTest.append   ( sTest     )
-timePrediction.append( timep   )
-timeTrain.append((end_time-start_time))
-print("SVM train TIME: ", (end_time-start_time), " seconds" )
-print()
-
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
-=======
 print()
 
 start_time = time.time()
@@ -1953,7 +1726,6 @@ timeTrain.append((end_time-start_time))
 print("SVM train TIME: ", (end_time-start_time), " seconds" )
 print()
 
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
 
 start_time = time.time()
 sTrain, prfClassFish, prfClassNonFish, prfMacro, sTest, timep = random_forest(
@@ -2121,14 +1893,6 @@ dfi.export(df_styled,"table_score_train.png", dpi=500)
 df_styled = df_score_macro.T[['Precision', 'Recall', 'F1', 'Support']].style.background_gradient().set_table_styles([dict(selector='th', props=[('text-align', 'center')])]) #adding a gradient based on values in cell
 df_styled.set_properties(**{'text-align': 'center'})
 dfi.export(df_styled,"table_score_macro.png", dpi=500)
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
-=======
-
->>>>>>> 35cd80e3252a5336b9140bf890775eebd8022465
 
 # # # Sample Images
 
