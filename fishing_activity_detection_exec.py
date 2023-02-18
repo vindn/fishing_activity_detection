@@ -39,7 +39,7 @@ def load_dataset():
                 pd_chunk["mmsi"] = pd_chunk["mmsi"].astype(int)
 
                 # set column type
-                pd_chunk['dh'] = pd.to_datetime(pd_chunk['dh'])
+                pd_chunk['timestamp'] = pd.to_datetime(pd_chunk['timestamp'])
 
                 try:
                     pd_chunk['lat'] = pd.to_numeric(
@@ -55,10 +55,10 @@ def load_dataset():
                     print("Error chunk ", n,  " ", ": ", A)
                     pd_chunk.dropna()
 
-                pd_chunk['rumo'] = pd_chunk['rumo'].astype(float)
-                pd_chunk['veloc'] = pd_chunk['veloc'].astype(float)
+                pd_chunk['shipcourse'] = pd_chunk['shipcourse'].astype(float)
+                pd_chunk['shipspeed'] = pd_chunk['shipspeed'].astype(float)
 
-                # deleta linha com nan
+                # delete lines nan
                 pd_chunk.dropna()
 
                 # append results
@@ -76,7 +76,7 @@ def load_dataset():
                 print("Error chunk ", n,  " ", ": ", A)
                 pass
 
-    df_gfw['dh'] = pd.to_datetime(df_gfw['dh'], utc=True)
+    df_gfw['timestamp'] = pd.to_datetime(df_gfw['timestamp'], utc=True)
     return df_gfw
 
 
@@ -98,7 +98,7 @@ def load_gdf(df_gfw):
         active_tools=['wheel_zoom'], frame_width=500, frame_height=400))
 
     gdf = gpd.GeoDataFrame(
-        df_gfw.set_index('dh'), geometry=gpd.points_from_xy(df_gfw.lon, df_gfw.lat))
+        df_gfw.set_index('timestamp'), geometry=gpd.points_from_xy(df_gfw.lon, df_gfw.lat))
 
     gdf.set_crs('epsg:4326')
 
@@ -109,13 +109,13 @@ def load_gdf(df_gfw):
 
 def filter_gdf(gdf, len_gdf_only_fishing, len_gdf_no_fishing):
 
-    gdf_only_fishing = gdf[gdf['vesselType'] ==
+    gdf_only_fishing = gdf[gdf['vesseltype'] ==
                            'Fishing'][:len_gdf_only_fishing]  # 263K
-    gdf_no_fishing = gdf[gdf['vesselType'] !=
+    gdf_no_fishing = gdf[gdf['vesseltype'] !=
                          'Fishing'][:len_gdf_no_fishing]  # 16M
 
-    # gdf_only_fishing = gdf[ gdf['vesselType'] == 'Fishing'][:2600000] #263K
-    # gdf_no_fishing   = gdf[ gdf['vesselType'] != 'Fishing'][:3000000] #16M
+    # gdf_only_fishing = gdf[ gdf['vesseltype'] == 'Fishing'][:2600000] #263K
+    # gdf_no_fishing   = gdf[ gdf['vesseltype'] != 'Fishing'][:3000000] #16M
 
     gdf_filtered = pd.concat([gdf_only_fishing, gdf_no_fishing])
 
@@ -131,7 +131,7 @@ def create_trajectory(gdf):
 
     # reset index
     gdf = gdf.reset_index()
-    gdf['dh'] = pd.to_datetime(gdf['dh'], utc=True)
+    gdf['timestamp'] = pd.to_datetime(gdf['timestamp'], utc=True)
 
     # limit to avoid slow
 #     gdf = gdf[:10000]
@@ -142,13 +142,13 @@ def create_trajectory(gdf):
 
     # Specify minimum length for a trajectory (in meters)
     minimum_length = 0
-    # collection = mpd.TrajectoryCollection(gdf, "imo",  t='dh', min_length=0.001)
+    # collection = mpd.TrajectoryCollection(gdf, "imo",  t='timestamp', min_length=0.001)
     collection = mpd.TrajectoryCollection(
-        gdf, "mmsi",  t='dh', min_length=0.001, crs='epsg:4326')
-    collection.add_direction(gdf.rumo)
-    collection.add_speed(gdf.veloc)
+        gdf, "mmsi",  t='timestamp', min_length=0.001, crs='epsg:4326')
+    collection.add_direction(gdf.shipcourse)
+    collection.add_speed(gdf.shipspeed)
 
-    # configura o intervalo em minutos entre os pontos para formar uma trajetoria
+    # set time gap between trajectories for split
     collection = mpd.ObservationGapSplitter(
         collection).split(gap=timedelta(minutes=90))
 
@@ -241,52 +241,52 @@ def init_trajectory_data(collection):
     collection.add_direction(overwrite=True)
 
     # format trajectories to clustering
-    linhas_traj_id = np.array([])
+    lines_traj_id = np.array([])
     mmsi = np.array([])
     area = np.array([])
-    varRumo = np.array([])
-    varVeloc = np.array([])
-    duracao = np.array([])
-    medrumo = np.array([])
-    nome = np.array([])
-    medVeloc = np.array([])
-    medSpeed = np.array([])
+    varCourse = np.array([])
+    varSpeed = np.array([])
+    duration = np.array([])
+    medshipcourse = np.array([])
+    shipname = np.array([])
+    meanShipSpeed = np.array([])
+    meanSpeedKnot = np.array([])
     endTrajCoastDist = np.array([])
-    vesselType = np.array([])
+    vesseltype = np.array([])
     traj_len = np.array([])
     n_points = np.array([])
     for traj in collection.trajectories:
         traj_id = str(traj.to_traj_gdf()["traj_id"]).split()[1]
 #         mmsi        =  np.append( mmsi, traj.df['mmsi'][0].astype(int) )
         mmsi = np.append(mmsi, traj.df['mmsi'][0])
-        linhas_traj_id = np.append(linhas_traj_id, traj_id)
+        lines_traj_id = np.append(lines_traj_id, traj_id)
         area = np.append(area, traj.get_mcp().area)
-        varRumo = np.append(varRumo, traj.df.direction.var())
-        medrumo = np.append(medrumo, traj.df.direction.mean())
-        varVeloc = np.append(varVeloc, traj.df.speed.var())
-        duracao = np.append(duracao, traj.get_duration().seconds)
-        nome = np.append(nome, traj.df["nome_navio"][0])
-        medVeloc = np.append(medVeloc, traj.df.speed.mean())
-        medSpeed = np.append(medSpeed, traj.df.speed.mean()*(100000*1.94384))
+        varCourse = np.append(varCourse, traj.df.direction.var())
+        medshipcourse = np.append(medshipcourse, traj.df.direction.mean())
+        varSpeed = np.append(varSpeed, traj.df.speed.var())
+        duration = np.append(duration, traj.get_duration().seconds)
+        shipname = np.append(shipname, traj.df["shipname"][0])
+        meanShipSpeed = np.append(meanShipSpeed, traj.df.speed.mean())
+        meanSpeedKnot = np.append(meanSpeedKnot, traj.df.speed.mean()*(100000*1.94384))
         traj.df["speed_knot"] = traj.df.speed*(100000*1.94384)
 #         endTrajCoastDist =    np.append( endTrajCoastDist, traj.get_end_location().distance(line_coast)*100 )
-        vesselType = np.append(vesselType, traj.df["vesselType"][0])
+        vesseltype = np.append(vesseltype, traj.df["vesseltype"][0])
         traj_len = np.append(traj_len, traj.get_length())
         n_points = np.append(n_points, len(traj.df))
 
     clus_df = pd.DataFrame()
-    clus_df["traj_id"] = linhas_traj_id
+    clus_df["traj_id"] = lines_traj_id
     clus_df["mmsi"] = mmsi
     clus_df["area"] = area
-    clus_df["varRumo"] = varRumo
-    clus_df["medrumo"] = medrumo
-    clus_df["varVeloc"] = varVeloc
-    clus_df["duracao"] = duracao
-    clus_df["nome_navio"] = nome
-    clus_df["medVeloc"] = medVeloc
-    clus_df["medSpeed"] = medSpeed
+    clus_df["varCourse"] = varCourse
+    clus_df["medshipcourse"] = medshipcourse
+    clus_df["varSpeed"] = varSpeed
+    clus_df["duration"] = duration
+    clus_df["shipname"] = shipname
+    clus_df["meanShipSpeed"] = meanShipSpeed
+    clus_df["meanSpeedKnot"] = meanSpeedKnot
 #     clus_df["endTrajCoastDist"]  = endTrajCoastDist
-    clus_df["vesselType"] = vesselType
+    clus_df["vesseltype"] = vesseltype
     clus_df["traj_len"] = traj_len
     clus_df["n_points"] = n_points
 
@@ -296,7 +296,7 @@ def init_trajectory_data(collection):
 # # Set Label
 def set_label_trajectory_info(df_trajs_info):
     df_trajs_info['activity'] = 'normal'
-    df_trajs_info.loc[df_trajs_info['vesselType']
+    df_trajs_info.loc[df_trajs_info['vesseltype']
                       == 'Fishing', ['activity']] = 'fishing'
 
 # plot some relevant data
@@ -304,27 +304,27 @@ def set_label_trajectory_info(df_trajs_info):
 
 def plot_statistics_dataset(df_trajs_info):
     # plot mean duration by vessel type
-    df_trajs_info.groupby(by=['vesselType'])[
-        'duracao'].mean().plot(kind='bar', figsize=(10, 3))
+    df_trajs_info.groupby(by=['vesseltype'])[
+        'duration'].mean().plot(kind='bar', figsize=(10, 3))
 
     # plot mean var course by vessel type
     df_trajs_info[
-        (df_trajs_info['medSpeed'] > 1) &
-        (df_trajs_info['medSpeed'] < 50) &
-        (df_trajs_info['duracao'] > 60*min_duration_trajectory) &
+        (df_trajs_info['meanSpeedKnot'] > 1) &
+        (df_trajs_info['meanSpeedKnot'] < 50) &
+        (df_trajs_info['duration'] > 60*min_duration_trajectory) &
         (df_trajs_info['n_points'] > 2)
-    ].groupby(by=['vesselType'])['varRumo'].mean().plot(kind='bar', figsize=(10, 3))
+    ].groupby(by=['vesseltype'])['varCourse'].mean().plot(kind='bar', figsize=(10, 3))
 
     # plot count by vessel type
     plt.clf()
     fig, ax = plt.subplots(figsize=(10, 3))
     plt.title('Number of Trajectories by Vessel Type')
     df_trajs_info[
-        (df_trajs_info['medSpeed'] > 1) &
-        (df_trajs_info['medSpeed'] < 50) &
-        (df_trajs_info['duracao'] > 60*min_duration_trajectory) &
+        (df_trajs_info['meanSpeedKnot'] > 1) &
+        (df_trajs_info['meanSpeedKnot'] < 50) &
+        (df_trajs_info['duration'] > 60*min_duration_trajectory) &
         (df_trajs_info['n_points'] > 2)
-    ].groupby(by=['vesselType'])['varRumo'].count().plot(kind='bar', figsize=(10, 3))
+    ].groupby(by=['vesseltype'])['varCourse'].count().plot(kind='bar', figsize=(10, 3))
     plt.savefig("number_of_vessels_by_type.png", bbox_inches='tight', ax=ax)
     # plt.show()
 
@@ -336,18 +336,18 @@ def filter_trajs_info(df_trajs_info, random_state_trajs_fishing_info):
 
     # Filter trajectories with duration > 10 min!!!
     df_trajs_fishing_info_filtered = df_trajs_info[
-        (df_trajs_info['vesselType'] == 'Fishing') &
-        (df_trajs_info['medSpeed'] > 1) &
-        (df_trajs_info['medSpeed'] < 50) &
-        (df_trajs_info['duracao'] > 60*min_duration_trajectory) &
+        (df_trajs_info['vesseltype'] == 'Fishing') &
+        (df_trajs_info['meanSpeedKnot'] > 1) &
+        (df_trajs_info['meanSpeedKnot'] < 50) &
+        (df_trajs_info['duration'] > 60*min_duration_trajectory) &
         (df_trajs_info['n_points'] > 2)
     ]
 
     df_trajs_nofishing_info_filtered = df_trajs_info[
-        (df_trajs_info['vesselType'] != 'Fishing') &
-        (df_trajs_info['medSpeed'] > 1) &
-        (df_trajs_info['medSpeed'] < 50) &
-        (df_trajs_info['duracao'] > 60*min_duration_trajectory) &
+        (df_trajs_info['vesseltype'] != 'Fishing') &
+        (df_trajs_info['meanSpeedKnot'] > 1) &
+        (df_trajs_info['meanSpeedKnot'] < 50) &
+        (df_trajs_info['duration'] > 60*min_duration_trajectory) &
         (df_trajs_info['n_points'] > 2)
     ]
 
@@ -375,9 +375,9 @@ def filter_trajs_info(df_trajs_info, random_state_trajs_fishing_info):
     # get sample to use in validation, (20%)
     x_test = pd.concat([
         df_trajs_fishing_info_filtered[[
-            'duracao', 'varRumo', 'varVeloc', 'traj_len', 'n_points']][int(0.8*n_size):],
+            'duration', 'varCourse', 'varSpeed', 'traj_len', 'n_points']][int(0.8*n_size):],
         df_trajs_nofishing_info_filtered[[
-            'duracao', 'varRumo', 'varVeloc', 'traj_len', 'n_points']][int(0.8*n_size):]
+            'duration', 'varCourse', 'varSpeed', 'traj_len', 'n_points']][int(0.8*n_size):]
     ])
 
     # get y concat 20% fishing info trajectories and 20% non fishing info trajectories
@@ -408,19 +408,19 @@ def logistic_regression(x, y, x_test, y_test):
 
     print("*** Logistic Regression")
 
-    # Definindo valores que serão testados em Logistic Regression:
+    # Set test parameters
     valores_C = np.array([0.01, 0.1, 0.5, 1, 2, 3, 5, 10, 20, 50, 100])
     regularizacao = ['l1', 'l2']
     valores_grid = {'C': valores_C, 'penalty': regularizacao}
 
-    # Criando o modelo
+    # Model
     modelLR = LogisticRegression(solver='liblinear', max_iter=1000)
 
-    # Criando os GRIDS
+    # Building GRIDS
     model = GridSearchCV(estimator=modelLR, param_grid=valores_grid, cv=5)
     model.fit(x, y)
 
-    # Imprimindo a melhor acurácia e os melhores parametros
+    # Best accuracy and best parameters
     print("LR Best accuracy: ", model.best_score_)
     print("C parameter: ",     model.best_estimator_.C)
     print("Regularization: ",   model.best_estimator_.penalty)
@@ -631,8 +631,6 @@ def svm(x, y, x_test, y_test):
     return model.best_score_, precision_recall_fscore[:, 0], precision_recall_fscore[:, 1], precision_recall_fscore_macro, accuracy, (end_time-start_time)
 
 # Random Forest in Trajectory-base data
-
-
 def random_forest(x, y, x_test, y_test):
     from sklearn import decomposition, datasets
     from sklearn.ensemble import RandomForestClassifier
@@ -878,15 +876,9 @@ def nn(x, y, x_test, y_test, epochs):
 
 
 # CNN model in raw data
-
-
 def rand_func():
     return random_state_trajs_fishing
-
-
 N_pixels = 32
-
-
 def pixel_normalize(lon_p, lat_p, lon_max, lon_min, lat_max, lat_min, N_pixels):
     distance_x = float(abs(lon_max - lon_min))
     distance_y = float(abs(lat_max - lat_min))
@@ -956,31 +948,14 @@ def save_traj_img(traj, directory):
     # image = numpy.asarray([[ (1., 1., 1.) for i in range(N_pixels) ] for j in range(N_pixels) ])
     # x, y, (r,g,b)
     image = np.zeros([N_pixels, N_pixels, 3], dtype=np.uint8)
-#     image = np.zeros([N_pixels, N_pixels, 3], dtype=np.uint8)
-#     image = np.zeros([N_pixels, N_pixels], dtype=np.uint8)
-#     image[:,:] = [255, 255, 255]
     image[:, :] = (255.0, 255.0, 255.0)
-#     image[:,:] = 0.0
 
     size_pixels = len(pixels_x)
     for i in range(size_pixels):
         # paint pixel point normalized
         if i < len(pixels_speed):
-            #         image[ pixels_x[i]-1 ][ pixels_y[i]-1 ] = ( ((pixels_speed[i]/50)*255.0), 0., 0.)
-            #             color = speed_to_color( pixels_speed[i] )
             color = (pixels_speed[i], pixels_speed[i], pixels_speed[i])
-#             color = (0., 0., 255.)
             image[pixels_x[i]-1][pixels_y[i]-1] = color
-
-#             if pixels_x[i]-2 > 0:
-#                 image[ pixels_x[i]-2 ][ pixels_y[i]-1 ] = color
-#             if pixels_y[i]-2 > 0:
-#                 image[ pixels_x[i]-1 ][ pixels_y[i]-2 ] = color
-#             if pixels_x[i] < N_pixels:
-#                 image[ pixels_x[i]   ][ pixels_y[i]-1 ] = color
-#             if pixels_y[i] < N_pixels:
-#                 image[ pixels_x[i]-1 ][ pixels_y[i]   ] = color
-
         else:
             # paint pixel points interpolated
             image[pixels_x[i]-1][pixels_y[i]-1] = (255.0, 0, 0)
@@ -1018,7 +993,7 @@ def draw_images(trajs_fishing, trajs_no_fishing):
     # filter trajs fishing
     for traj in trajs_fishing.trajectories:
         # This multiplication is a convertion for knots unit
-        if traj.df["vesselType"][0] == "Fishing" and traj.df.speed.mean()*(100000*1.94384) > 1 and traj.df.speed.mean()*(100000*1.94384) < 50:
+        if traj.df["vesseltype"][0] == "Fishing" and traj.df.speed.mean()*(100000*1.94384) > 1 and traj.df.speed.mean()*(100000*1.94384) < 50:
             t1 = traj.get_start_time()
             t2 = t1 + timedelta(seconds=max_traj_duration)
             # cut trajetory
@@ -1030,7 +1005,7 @@ def draw_images(trajs_fishing, trajs_no_fishing):
     # filter trajs no fishing
     for traj in trajs_no_fishing.trajectories:
         # This multiplication is a convertion for knots unit
-        if traj.df["vesselType"][0] != "Fishing" and traj.df.speed.mean()*(100000*1.94384) > 1 and traj.df.speed.mean()*(100000*1.94384) < 50:
+        if traj.df["vesseltype"][0] != "Fishing" and traj.df.speed.mean()*(100000*1.94384) > 1 and traj.df.speed.mean()*(100000*1.94384) < 50:
             t1 = traj.get_start_time()
             t2 = t1 + timedelta(seconds=max_traj_duration)
             # cut trajetory
@@ -1354,16 +1329,16 @@ def prepare_data_rnn(trajs_fishing, trajs_no_fishing):
 
     # filter trajs fishing
     for traj in trajs_fishing.trajectories:
-        if traj.df["vesselType"][0] == "Fishing" and traj.df.speed.mean()*(100000*1.94384) > 1 and traj.df.speed.mean()*(100000*1.94384) < 50:
+        if traj.df["vesseltype"][0] == "Fishing" and traj.df.speed.mean()*(100000*1.94384) > 1 and traj.df.speed.mean()*(100000*1.94384) < 50:
             filtered_trajs_fishing.append(
-                traj.df[['lat', 'lon', 'veloc', 'rumo']].to_numpy())
+                traj.df[['lat', 'lon', 'shipspeed', 'shipcourse']].to_numpy())
             filtered_trajs_fishing_label.append("fishing")
 
     # filter trajs no fishing
     for traj in trajs_no_fishing.trajectories:
-        if traj.df["vesselType"][0] != "Fishing" and traj.df.speed.mean()*(100000*1.94384) > 1 and traj.df.speed.mean()*(100000*1.94384) < 50:
+        if traj.df["vesseltype"][0] != "Fishing" and traj.df.speed.mean()*(100000*1.94384) > 1 and traj.df.speed.mean()*(100000*1.94384) < 50:
             filtered_trajs_nofishing.append(
-                traj.df[['lat', 'lon', 'veloc', 'rumo']].to_numpy())
+                traj.df[['lat', 'lon', 'shipspeed', 'shipcourse']].to_numpy())
             filtered_trajs_nofishing_label.append("normal")
 
     # verify the size of dataset and set smaller size
@@ -1609,7 +1584,7 @@ def rnn(trajs_fishing, trajs_no_fishing, epochs):
 #######################################
 # MAIN
 # Dataset
-# | train | validation | test (20%) |
+# || train | validation (20%) || test (20%) ||
 #######################################
 
 #disable_gpu( )
@@ -1628,7 +1603,7 @@ gdf_only_fishing, gdf_no_fishing, gdf_filtered = filter_gdf(
     gdf, len_gdf_only_fishing, len_gdf_no_fishing)
 
 # transform gdf in moving pandas trajectories. Or load from file the prior built.
-trajs_fishing, trajs_no_fishing = load_or_build_trajectories( len_gdf_only_fishing, load_trajectories_collection_from_file=True )
+trajs_fishing, trajs_no_fishing = load_or_build_trajectories( len_gdf_only_fishing, load_trajectories_collection_from_file=False )
 
 # we have 12K fishing trajectories and 108K non fishing trajectories
 # limit trajs non fishing to avoid waste unnecessary processing; <-------------------
@@ -1656,10 +1631,10 @@ random_state_trajs_fishing += 0.01
 df_trajs_info_filtered, x_test, y_test = filter_trajs_info(
     df_trajs_info, random_state_trajs_fishing_info)
 data_model = df_trajs_info_filtered[[
-    'duracao', 'varRumo', 'varVeloc', 'activity', 'traj_len', 'n_points']]
+    'duration', 'varCourse', 'varSpeed', 'activity', 'traj_len', 'n_points']]
 
 # set x and y to models using trajectory-based
-x = data_model[['duracao', 'varRumo', 'varVeloc', 'traj_len', 'n_points']]
+x = data_model[['duration', 'varCourse', 'varSpeed', 'traj_len', 'n_points']]
 y = data_model[['activity']]
 
 trajs_fishing, trajs_no_fishing = filter_trajs(trajs_fishing, trajs_no_fishing)
@@ -1679,7 +1654,7 @@ timePrediction = []
 timeTrain = []
 
 # number of epochs to train NN, CNN and RNN
-epochs = 50
+epochs = 1
 
 ###############################
 # Trajectory-based data models
@@ -1896,8 +1871,8 @@ dfi.export(df_styled,"table_score_macro.png", dpi=500)
 
 # # # Sample Images
 
-# # trajs_no_fishing.trajectories[250].hvplot(geo=True, tiles='OSM', line_width=2, c='mmsi', hover_cols=['mmsi', 'dh', 'veloc'], cmap='rainbow')
-# trajs_no_fishing.get_trajectory('3352713000_16').hvplot(geo=True, tiles='OSM', line_width=6, c='mmsi', hover_cols=['mmsi', 'dh', 'veloc'], cmap='fire')
+# # trajs_no_fishing.trajectories[250].hvplot(geo=True, tiles='OSM', line_width=2, c='mmsi', hover_cols=['mmsi', 'timestamp', 'shipspeed'], cmap='rainbow')
+# trajs_no_fishing.get_trajectory('3352713000_16').hvplot(geo=True, tiles='OSM', line_width=6, c='mmsi', hover_cols=['mmsi', 'timestamp', 'shipspeed'], cmap='fire')
 
 # df_trajs_info_filtered[df_trajs_info_filtered['activity'] == 'normal'].sort_values(by="n_points",ascending=True)
 
@@ -1911,7 +1886,7 @@ dfi.export(df_styled,"table_score_macro.png", dpi=500)
 # trajs_pol = trajs_no_fishing.clip( pol )
 # gdf_pol = gpd.GeoDataFrame(index=[0], crs='epsg:4326', geometry=[pol])
 
-# plot = mpd.TrajectoryCollection( trajs_pol.trajectories[10:50] ).hvplot(geo=True, tiles='OSM', line_width=6, c='mmsi', hover_cols=['mmsi', 'dh', 'veloc'], cmap='fire') * gdf_pol.hvplot(geo=True, alpha=0.1, cmap='rainbow')
+# plot = mpd.TrajectoryCollection( trajs_pol.trajectories[10:50] ).hvplot(geo=True, tiles='OSM', line_width=6, c='mmsi', hover_cols=['mmsi', 'timestamp', 'shipspeed'], cmap='fire') * gdf_pol.hvplot(geo=True, alpha=0.1, cmap='rainbow')
 # hvplot.show(plot)
 
 # %%
