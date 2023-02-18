@@ -6,9 +6,15 @@ This is a comparison model that detects fishing vessel activity in an AIS datase
 
 - Python 3.6+
 - Tensorflow
+- SKlearn
 - Keras
 - Geo Pandas
 - Moving Pandas
+- hvplot
+- bokeh
+- dataframe_image
+- seaborn
+- geckodriver
 
 ## Training
 
