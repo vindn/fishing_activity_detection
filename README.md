@@ -20,8 +20,8 @@ This is a comparison model that detects fishing vessel activity in an AIS datase
 ## Dataset
 
 After building the vessel's trajectories:
--Train: 5868 trajectories by class
--Test: 1468 trajectories by class
+- Train: 5868 trajectories by class
+- Test: 1468 trajectories by class
 
 ## Accuracy
 
