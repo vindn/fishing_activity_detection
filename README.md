@@ -31,7 +31,7 @@ After building the vessel's trajectories:
 
 ## Accuracy
 
-| Model  | Accuracy |
+| Model  | Train Acc. |
 | ------------- | :---: |
 | LR  | 0.85  |
 | DT  | 0.87  |
