@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 # %%
+import dataframe_image as dfi
 from bokeh.resources import INLINE
 from sklearn.preprocessing import StandardScaler
 import random
@@ -267,7 +268,8 @@ def init_trajectory_data(collection):
         duration = np.append(duration, traj.get_duration().seconds)
         shipname = np.append(shipname, traj.df["shipname"][0])
         meanShipSpeed = np.append(meanShipSpeed, traj.df.speed.mean())
-        meanSpeedKnot = np.append(meanSpeedKnot, traj.df.speed.mean()*(100000*1.94384))
+        meanSpeedKnot = np.append(
+            meanSpeedKnot, traj.df.speed.mean()*(100000*1.94384))
         traj.df["speed_knot"] = traj.df.speed*(100000*1.94384)
 #         endTrajCoastDist =    np.append( endTrajCoastDist, traj.get_end_location().distance(line_coast)*100 )
         vesseltype = np.append(vesseltype, traj.df["vesseltype"][0])
@@ -295,7 +297,7 @@ def init_trajectory_data(collection):
 
 # # Set Label
 def set_label_trajectory_info(df_trajs_info):
-    df_trajs_info['activity'] = 'normal'
+    df_trajs_info['activity'] = 'sailing'
     df_trajs_info.loc[df_trajs_info['vesseltype']
                       == 'Fishing', ['activity']] = 'fishing'
 
@@ -431,43 +433,32 @@ def logistic_regression(x, y, x_test, y_test):
     end_time = time.time()
     print("LR Execution time: ", (end_time-start_time))
 
-    from sklearn.metrics import confusion_matrix
+    from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+    import matplotlib.pyplot as plt
+
     y_true = y_test
     cm = confusion_matrix(y_true, y_pred)
     print("LR Confusion Matrix: \n", cm)
+    plt.clf()
+    disp_cm = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["fishing", "sailing"])
+    disp_cm.plot()
+    fig, ax = plt.subplots(figsize=(10, 8))
+    plot = disp_cm.plot(ax=ax)
+    plt.savefig("cf_lr.png", bbox_inches='tight', ax=ax)
 
     accuracy = accuracy_score(y_true, y_pred)
     print("LR TEST accuracy: ", accuracy)
-
-    import seaborn as sn
-    import pandas as pd
-    import matplotlib.pyplot as plt
-
-    group_names = ['True Fishing', 'False Fishing',
-                   'False Sailing', 'True Sailing']
-    group_counts = ["{0:0.0f}".format(value) for value in
-                    cm.flatten()]
-    group_percentages = ["{0:.2%}".format(value) for value in
-                         cm.flatten()/np.sum(cm)]
-    labels = [f"{v1}\n{v2}\n{v3}" for v1, v2, v3 in
-              zip(group_names, group_counts, group_percentages)]
-    labels = np.asarray(labels).reshape(2, 2)
-    plt.clf()
-    fig, ax = plt.subplots(figsize=(10, 8))
-    plot = sn.heatmap(cm, annot=labels, fmt='', cmap='Blues', ax=ax)
-    fig = plot.get_figure()
-    fig.savefig("cf_rl.png")
 
     # recall, precision, f1
     from sklearn.metrics import precision_recall_fscore_support
     print("LR: ", precision_recall_fscore_support(
         y_true, y_pred, average='macro'))
-    print("LR: ", precision_recall_fscore_support(y_true, y_pred, average=None))
+    print("LR: ", precision_recall_fscore_support(y_true, y_pred, average=None, labels=["fishing", "sailing"]))
 
     precision_recall_fscore = np.array(
-        precision_recall_fscore_support(y_true, y_pred, average=None))
+        precision_recall_fscore_support(y_true, y_pred, average=None, labels=["fishing", "sailing"]))
     precision_recall_fscore_macro = precision_recall_fscore_support(
-        y_true, y_pred, average='macro')
+        y_true, y_pred, average='macro', labels=["fishing", "sailing"])
 
     return model.best_score_, precision_recall_fscore[:, 0], precision_recall_fscore[:, 1], precision_recall_fscore_macro, accuracy, (end_time-start_time)
 
@@ -518,43 +509,32 @@ def decision_tree(x, y, x_test, y_test):
     end_time = time.time()
     print("DT Execution time: ", (end_time-start_time))
 
-    from sklearn.metrics import confusion_matrix
+    from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+    import matplotlib.pyplot as plt
+
     y_true = y_test
     cm = confusion_matrix(y_true, y_pred)
     print("DT Confusion Matrix: \n", cm)
+    plt.clf()
+    disp_cm = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["fishing", "sailing"])
+    disp_cm.plot()
+    fig, ax = plt.subplots(figsize=(10, 8))
+    plot = disp_cm.plot(ax=ax)
+    plt.savefig("cf_dt.png", bbox_inches='tight', ax=ax)
 
     accuracy = accuracy_score(y_true, y_pred)
     print("DT TEST accuracy: ", accuracy)
-
-    import seaborn as sn
-    import pandas as pd
-    import matplotlib.pyplot as plt
-
-    group_names = ['True Fishing', 'False Fishing',
-                   'False Sailing', 'True Sailing']
-    group_counts = ["{0:0.0f}".format(value) for value in
-                    cm.flatten()]
-    group_percentages = ["{0:.2%}".format(value) for value in
-                         cm.flatten()/np.sum(cm)]
-    labels = [f"{v1}\n{v2}\n{v3}" for v1, v2, v3 in
-              zip(group_names, group_counts, group_percentages)]
-    labels = np.asarray(labels).reshape(2, 2)
-    plt.clf()
-    fig, ax = plt.subplots(figsize=(10, 8))
-    plot = sn.heatmap(cm, annot=labels, fmt='', cmap='Blues', ax=ax)
-    fig = plot.get_figure()
-    fig.savefig("cf_decision_tree_val.png")
 
     # recall, precision, f1
     from sklearn.metrics import precision_recall_fscore_support
     print("DT: ", precision_recall_fscore_support(
         y_true, y_pred, average='macro'))
-    print("DT: ", precision_recall_fscore_support(y_true, y_pred, average=None))
+    print("DT: ", precision_recall_fscore_support(y_true, y_pred, average=None, labels=["fishing", "sailing"]))
 
     precision_recall_fscore = np.array(
-        precision_recall_fscore_support(y_true, y_pred, average=None))
+        precision_recall_fscore_support(y_true, y_pred, average=None, labels=["fishing", "sailing"]))
     precision_recall_fscore_macro = precision_recall_fscore_support(
-        y_true, y_pred, average='macro')
+        y_true, y_pred, average='macro', labels=["fishing", "sailing"])
 
     return model.best_score_, precision_recall_fscore[:, 0], precision_recall_fscore[:, 1], precision_recall_fscore_macro, accuracy, (end_time-start_time)
 
@@ -591,46 +571,38 @@ def svm(x, y, x_test, y_test):
     end_time = time.time()
     print("SVM Execution time: ", (end_time-start_time))
 
-    from sklearn.metrics import confusion_matrix
+    from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+    import matplotlib.pyplot as plt
+
     y_true = y_test
     cm = confusion_matrix(y_true, y_pred)
     print("SVM Confusion Matrix: \n", cm)
+    plt.clf()
+    disp_cm = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["fishing", "sailing"])
+    disp_cm.plot()
+    fig, ax = plt.subplots(figsize=(10, 8))
+    plot = disp_cm.plot(ax=ax)
+    plt.savefig("cf_svm.png", bbox_inches='tight', ax=ax)
 
     accuracy = accuracy_score(y_true, y_pred)
     print("SVM TEST accuracy: ", accuracy)
-
-    import seaborn as sn
-    import pandas as pd
-    import matplotlib.pyplot as plt
-
-    group_names = ['True Fishing', 'False Fishing',
-                   'False Sailing', 'True Sailing']
-    group_counts = ["{0:0.0f}".format(value) for value in
-                    cm.flatten()]
-    group_percentages = ["{0:.2%}".format(value) for value in
-                         cm.flatten()/np.sum(cm)]
-    labels = [f"{v1}\n{v2}\n{v3}" for v1, v2, v3 in
-              zip(group_names, group_counts, group_percentages)]
-    labels = np.asarray(labels).reshape(2, 2)
-    plt.clf()
-    fig, ax = plt.subplots(figsize=(10, 8))
-    plot = sn.heatmap(cm, annot=labels, fmt='', cmap='Blues', ax=ax)
-    fig = plot.get_figure()
-    fig.savefig("svm_decision_tree_val.png")
 
     # recall, precision, f1
     from sklearn.metrics import precision_recall_fscore_support
     print("SVM: ", precision_recall_fscore_support(
         y_true, y_pred, average='macro'))
-    print("SVM: ", precision_recall_fscore_support(y_true, y_pred, average=None))
+    print("SVM: ", precision_recall_fscore_support(y_true, y_pred, average=None, labels=["fishing", "sailing"]))
+
     precision_recall_fscore = np.array(
-        precision_recall_fscore_support(y_true, y_pred, average=None))
+        precision_recall_fscore_support(y_true, y_pred, average=None, labels=["fishing", "sailing"]))
     precision_recall_fscore_macro = precision_recall_fscore_support(
-        y_true, y_pred, average='macro')
+        y_true, y_pred, average='macro', labels=["fishing", "sailing"])
 
     return model.best_score_, precision_recall_fscore[:, 0], precision_recall_fscore[:, 1], precision_recall_fscore_macro, accuracy, (end_time-start_time)
 
 # Random Forest in Trajectory-base data
+
+
 def random_forest(x, y, x_test, y_test):
     from sklearn import decomposition, datasets
     from sklearn.ensemble import RandomForestClassifier
@@ -661,42 +633,32 @@ def random_forest(x, y, x_test, y_test):
     end_time = time.time()
     print("RF Execution time: ", (end_time-start_time))
 
-    from sklearn.metrics import confusion_matrix
+    from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+    import matplotlib.pyplot as plt
+
     y_true = y_test
     cm = confusion_matrix(y_true, y_pred)
     print("RF Confusion Matrix: \n", cm)
+    plt.clf()
+    disp_cm = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["fishing", "sailing"])
+    disp_cm.plot()
+    fig, ax = plt.subplots(figsize=(10, 8))
+    plot = disp_cm.plot(ax=ax)
+    plt.savefig("cf_rf.png", bbox_inches='tight', ax=ax)
 
     accuracy = accuracy_score(y_true, y_pred)
     print("RF TEST accuracy: ", accuracy)
-
-    import seaborn as sn
-    import pandas as pd
-    import matplotlib.pyplot as plt
-
-    group_names = ['True Fishing', 'False Fishing',
-                   'False Sailing', 'True Sailing']
-    group_counts = ["{0:0.0f}".format(value) for value in
-                    cm.flatten()]
-    group_percentages = ["{0:.2%}".format(value) for value in
-                         cm.flatten()/np.sum(cm)]
-    labels = [f"{v1}\n{v2}\n{v3}" for v1, v2, v3 in
-              zip(group_names, group_counts, group_percentages)]
-    labels = np.asarray(labels).reshape(2, 2)
-    plt.clf()
-    fig, ax = plt.subplots(figsize=(10, 8))
-    plot = sn.heatmap(cm, annot=labels, fmt='', cmap='Blues', ax=ax)
-    fig = plot.get_figure()
-    fig.savefig("rf_decision_tree_val.png")
 
     # recall, precision, f1
     from sklearn.metrics import precision_recall_fscore_support
     print("RF: ", precision_recall_fscore_support(
         y_true, y_pred, average='macro'))
-    print("RF: ", precision_recall_fscore_support(y_true, y_pred, average=None))
+    print("RF: ", precision_recall_fscore_support(y_true, y_pred, average=None, labels=["fishing", "sailing"]))
+
     precision_recall_fscore = np.array(
-        precision_recall_fscore_support(y_true, y_pred, average=None))
+        precision_recall_fscore_support(y_true, y_pred, average=None, labels=["fishing", "sailing"]))
     precision_recall_fscore_macro = precision_recall_fscore_support(
-        y_true, y_pred, average='macro')
+        y_true, y_pred, average='macro', labels=["fishing", "sailing"])
 
     return model.best_score_, precision_recall_fscore[:, 0], precision_recall_fscore[:, 1], precision_recall_fscore_macro, accuracy, (end_time-start_time)
 
@@ -821,40 +783,38 @@ def nn(x, y, x_test, y_test, epochs):
     y_pred = np.array([np.argmax(i) for i in p])
     y_true = np.array([np.argmax(i) for i in Y_test])
 
+    # reverse to labels in Y
+    y_pred = lb.inverse_transform( y_pred )
+    y_true = lb.inverse_transform( y_true )
+
+    from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+    import matplotlib.pyplot as plt
+
     cm = confusion_matrix(y_true, y_pred)
     print("NN Confusion Matrix: \n", cm)
 
+    print("NN Classes: 0-", lb.classes_[0], " 1-", lb.classes_[1] )
+
+    plt.clf()
+    disp_cm = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["fishing", "sailing"])
+    disp_cm.plot()
+    fig, ax = plt.subplots(figsize=(10, 8))
+    plot = disp_cm.plot(ax=ax)
+    plt.savefig("cf_nn.png", bbox_inches='tight', ax=ax)
+
     accuracy = accuracy_score(y_true, y_pred)
     print("NN TEST accuracy: ", accuracy)
-
-    import seaborn as sn
-    import pandas as pd
-    import matplotlib.pyplot as plt
-
-    group_names = ['True Fishing', 'False Fishing',
-                   'False Sailing', 'True Sailing']
-    group_counts = ["{0:0.0f}".format(value) for value in
-                    cm.flatten()]
-    group_percentages = ["{0:.2%}".format(value) for value in
-                         cm.flatten()/np.sum(cm)]
-    labels = [f"{v1}\n{v2}\n{v3}" for v1, v2, v3 in
-              zip(group_names, group_counts, group_percentages)]
-    labels = np.asarray(labels).reshape(2, 2)
-    plt.clf()
-    fig, ax = plt.subplots(figsize=(10, 8))
-    plot = sn.heatmap(cm, annot=labels, fmt='', cmap='Blues', ax=ax)
-    fig = plot.get_figure()
-    fig.savefig("cf_nn_val.png")
 
     # recall, precision, f1
     from sklearn.metrics import precision_recall_fscore_support
     print("NN: ", precision_recall_fscore_support(
         y_true, y_pred, average='macro'))
-    print("NN: ", precision_recall_fscore_support(y_true, y_pred, average=None))
+    print("NN: ", precision_recall_fscore_support(y_true, y_pred, average=None, labels=["fishing", "sailing"]))
+
     precision_recall_fscore = np.array(
-        precision_recall_fscore_support(y_true, y_pred, average=None))
+        precision_recall_fscore_support(y_true, y_pred, average=None, labels=["fishing", "sailing"]))
     precision_recall_fscore_macro = precision_recall_fscore_support(
-        y_true, y_pred, average='macro')
+        y_true, y_pred, average='macro', labels=["fishing", "sailing"])
 
     # history epochs
     plt.clf()
@@ -878,7 +838,11 @@ def nn(x, y, x_test, y_test, epochs):
 # CNN model in raw data
 def rand_func():
     return random_state_trajs_fishing
+
+
 N_pixels = 32
+
+
 def pixel_normalize(lon_p, lat_p, lon_max, lon_min, lat_max, lat_min, N_pixels):
     distance_x = float(abs(lon_max - lon_min))
     distance_y = float(abs(lat_max - lat_min))
@@ -1012,7 +976,7 @@ def draw_images(trajs_fishing, trajs_no_fishing):
             traj_tmp = traj.get_segment_between(t1, t2)
 
             filtered_trajs_nofishing.append(save_traj_img(traj_tmp, 'all'))
-            filtered_trajs_nofishing_label.append("normal")
+            filtered_trajs_nofishing_label.append("sailing")
 
     n_count_train_fishing_traj = len(filtered_trajs_fishing)
     n_count_train_nofishing_traj = len(filtered_trajs_nofishing)
@@ -1095,6 +1059,7 @@ def cnn(trajs_fishing, trajs_no_fishing, epochs, load_images_dataset=False):
     # load images from binaries files or use the prior builded trajectories
 #     load_images_dataset=False
 
+    lb = LabelEncoder()
     if load_images_dataset:
         # load images from numpy array in files
         # Use this only when you don't wanna run all code again, eg. to increase epochs.
@@ -1109,12 +1074,10 @@ def cnn(trajs_fishing, trajs_no_fishing, epochs, load_images_dataset=False):
         img_train, img_train_label, img_test, img_test_label = draw_images(
             trajs_fishing, trajs_no_fishing)
         # Build Images labels
-        let = LabelEncoder()
-        img_train_label_np = let.fit_transform(img_train_label)
+        img_train_label_np = lb.fit_transform(img_train_label)
         img_train_label_np = to_categorical(img_train_label_np)
 
-        les = LabelEncoder()
-        img_test_label_np = les.fit_transform(img_test_label)
+        img_test_label_np = lb.fit_transform(img_test_label)
         img_test_label_np = to_categorical(img_test_label_np)
 
         # convert array to numpy
@@ -1247,40 +1210,38 @@ def cnn(trajs_fishing, trajs_no_fishing, epochs, load_images_dataset=False):
     y_pred = np.array([np.argmax(i) for i in p])
     y_true = np.array([np.argmax(i) for i in img_test_label_np])
 
+    # reverse to labels in Y
+    y_pred = lb.inverse_transform( y_pred )
+    y_true = lb.inverse_transform( y_true )
+
+    from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+    import matplotlib.pyplot as plt
+
     cm = confusion_matrix(y_true, y_pred)
     print("CNN Confusion Matrix: \n", cm)
 
+    print("CNN Classes: 0-", lb.classes_[0], " 1-", lb.classes_[1] )
+
+    plt.clf()
+    disp_cm = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["fishing", "sailing"])
+    disp_cm.plot()
+    fig, ax = plt.subplots(figsize=(10, 8))
+    plot = disp_cm.plot(ax=ax)
+    plt.savefig("cf_cnn.png", bbox_inches='tight', ax=ax)
+
     accuracy = accuracy_score(y_true, y_pred)
     print("CNN TEST accuracy: ", accuracy)
-
-    import seaborn as sn
-    import pandas as pd
-    import matplotlib.pyplot as plt
-
-    group_names = ['True Fishing', 'False Fishing',
-                   'False Sailing', 'True Sailing']
-    group_counts = ["{0:0.0f}".format(value) for value in
-                    cm.flatten()]
-    group_percentages = ["{0:.2%}".format(value) for value in
-                         cm.flatten()/np.sum(cm)]
-    labels = [f"{v1}\n{v2}\n{v3}" for v1, v2, v3 in
-              zip(group_names, group_counts, group_percentages)]
-    labels = np.asarray(labels).reshape(2, 2)
-    plt.clf()
-    fig, ax = plt.subplots(figsize=(10, 8))
-    plot = sn.heatmap(cm, annot=labels, fmt='', cmap='Blues', ax=ax)
-    fig = plot.get_figure()
-    fig.savefig("cf_cnn_val.png")
 
     # recall, precision, f1
     from sklearn.metrics import precision_recall_fscore_support
     print("CNN: ", precision_recall_fscore_support(
         y_true, y_pred, average='macro'))
-    print("CNN: ", precision_recall_fscore_support(y_true, y_pred, average=None))
+    print("CNN: ", precision_recall_fscore_support(y_true, y_pred, average=None, labels=["fishing", "sailing"]))
+
     precision_recall_fscore = np.array(
-        precision_recall_fscore_support(y_true, y_pred, average=None))
+        precision_recall_fscore_support(y_true, y_pred, average=None, labels=["fishing", "sailing"]))
     precision_recall_fscore_macro = precision_recall_fscore_support(
-        y_true, y_pred, average='macro')
+        y_true, y_pred, average='macro', labels=["fishing", "sailing"])
 
     # history epochs
     plt.clf()
@@ -1339,7 +1300,7 @@ def prepare_data_rnn(trajs_fishing, trajs_no_fishing):
         if traj.df["vesseltype"][0] != "Fishing" and traj.df.speed.mean()*(100000*1.94384) > 1 and traj.df.speed.mean()*(100000*1.94384) < 50:
             filtered_trajs_nofishing.append(
                 traj.df[['lat', 'lon', 'shipspeed', 'shipcourse']].to_numpy())
-            filtered_trajs_nofishing_label.append("normal")
+            filtered_trajs_nofishing_label.append("sailing")
 
     # verify the size of dataset and set smaller size
     n_count_train_fishing_traj = len(filtered_trajs_fishing)
@@ -1423,10 +1384,10 @@ def rnn(trajs_fishing, trajs_no_fishing, epochs):
         X_val = sequence.pad_sequences(val_x, maxlen=max_trajectory_length)
 
         # Set label in columns format
-        lb = LabelEncoder()
+        # lb = LabelEncoder()
         lb_trainy = lb.fit_transform(train_y)
         Y_train = to_categorical(lb_trainy)
-        lb = LabelEncoder()
+        # lb = LabelEncoder()
         lb_testy = lb.fit_transform(val_y)
         Y_val = to_categorical(lb_testy)
 
@@ -1508,40 +1469,38 @@ def rnn(trajs_fishing, trajs_no_fishing, epochs):
     y_true = np.array([np.argmax(i) for i in test_Y])
     y_pred = np.array([np.argmax(i) for i in p])
 
+    # reverse to labels in Y
+    y_pred = lb.inverse_transform( y_pred )
+    y_true = lb.inverse_transform( y_true )
+
+    from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+    import matplotlib.pyplot as plt
+
     cm = confusion_matrix(y_true, y_pred)
     print("RNN Confusion Matrix: \n", cm)
 
+    print("RNN Classes: 0-", lb.classes_[0], " 1-", lb.classes_[1] )
+
+    plt.clf()
+    disp_cm = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["fishing", "sailing"])
+    disp_cm.plot()
+    fig, ax = plt.subplots(figsize=(10, 8))
+    plot = disp_cm.plot(ax=ax)
+    plt.savefig("cf_rnn.png", bbox_inches='tight', ax=ax)
+
     accuracy = accuracy_score(y_true, y_pred)
     print("RNN TEST accuracy: ", accuracy)
-
-    import seaborn as sn
-    import pandas as pd
-    import matplotlib.pyplot as plt
-
-    group_names = ['True Fishing', 'False Fishing',
-                   'False Sailing', 'True Sailing']
-    group_counts = ["{0:0.0f}".format(value) for value in
-                    cm.flatten()]
-    group_percentages = ["{0:.2%}".format(value) for value in
-                         cm.flatten()/np.sum(cm)]
-    labels = [f"{v1}\n{v2}\n{v3}" for v1, v2, v3 in
-              zip(group_names, group_counts, group_percentages)]
-    labels = np.asarray(labels).reshape(2, 2)
-    plt.clf()
-    fig, ax = plt.subplots(figsize=(10, 8))
-    plot = sn.heatmap(cm, annot=labels, fmt='', cmap='Blues', ax=ax)
-    fig = plot.get_figure()
-    fig.savefig("cf_rnn_val.png")
 
     # recall, precision, f1
     from sklearn.metrics import precision_recall_fscore_support
     print("RNN: ", precision_recall_fscore_support(
         y_true, y_pred, average='macro'))
-    print("RNN: ", precision_recall_fscore_support(y_true, y_pred, average=None))
+    print("RNN: ", precision_recall_fscore_support(y_true, y_pred, average=None, labels=["fishing", "sailing"]))
+
     precision_recall_fscore = np.array(
-        precision_recall_fscore_support(y_true, y_pred, average=None))
+        precision_recall_fscore_support(y_true, y_pred, average=None, labels=["fishing", "sailing"]))
     precision_recall_fscore_macro = precision_recall_fscore_support(
-        y_true, y_pred, average='macro')
+        y_true, y_pred, average='macro', labels=["fishing", "sailing"])
 
     # history epochs
     plt.clf()
@@ -1566,20 +1525,21 @@ def rnn(trajs_fishing, trajs_no_fishing, epochs):
 # Call Models
 ####################
 
-# def disable_gpu( ):
-#     try:
-#         # Disable all GPUS
-#         tf.config.set_visible_devices([], 'GPU')
-#         visible_devices = tf.config.get_visible_devices()
-#         for device in visible_devices:
-#             assert device.device_type != 'GPU'
-#     except:
-#         # Invalid device or cannot modify virtual devices once initialized.
-#         print("Invalid device or cannot modify virtual devices once initialized.")
-#         pass
+def disable_gpu( ):
+    import tensorflow as tf
+    try:
+        # Disable all GPUS
+        tf.config.set_visible_devices([], 'GPU')
+        visible_devices = tf.config.get_visible_devices()
+        for device in visible_devices:
+            assert device.device_type != 'GPU'
+    except:
+        # Invalid device or cannot modify virtual devices once initialized.
+        print("Invalid device or cannot modify virtual devices once initialized.")
+        pass
 
-#     import os
-#     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+    import os
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 #######################################
 # MAIN
@@ -1587,7 +1547,7 @@ def rnn(trajs_fishing, trajs_no_fishing, epochs):
 # || train | validation (20%) || test (20%) ||
 #######################################
 
-#disable_gpu( )
+# disable_gpu( )
 
 # load dataset from file
 df_gfw = load_dataset()
@@ -1603,11 +1563,13 @@ gdf_only_fishing, gdf_no_fishing, gdf_filtered = filter_gdf(
     gdf, len_gdf_only_fishing, len_gdf_no_fishing)
 
 # transform gdf in moving pandas trajectories. Or load from file the prior built.
-trajs_fishing, trajs_no_fishing = load_or_build_trajectories( len_gdf_only_fishing, load_trajectories_collection_from_file=False )
+trajs_fishing, trajs_no_fishing = load_or_build_trajectories(
+    len_gdf_only_fishing, load_trajectories_collection_from_file=False)
 
 # we have 12K fishing trajectories and 108K non fishing trajectories
 # limit trajs non fishing to avoid waste unnecessary processing; <-------------------
-trajs_no_fishing = mpd.TrajectoryCollection( trajs_no_fishing.trajectories[:20000] )
+trajs_no_fishing = mpd.TrajectoryCollection(
+    trajs_no_fishing.trajectories[:20000])
 
 # trajs info fishing (trajectory-based data)
 traj_info_fishing = init_trajectory_data(trajs_fishing)
@@ -1639,7 +1601,6 @@ y = data_model[['activity']]
 
 trajs_fishing, trajs_no_fishing = filter_trajs(trajs_fishing, trajs_no_fishing)
 
-# %%
 
 # Results Arrays
 models = {'LR': 0, 'DT': 1, 'SVM': 2, 'RF': 3, 'NN': 4, 'CNN': 5, 'RNN': 6}
@@ -1654,7 +1615,9 @@ timePrediction = []
 timeTrain = []
 
 # number of epochs to train NN, CNN and RNN
-epochs = 1
+epochs = 100
+
+# %%
 
 ###############################
 # Trajectory-based data models
@@ -1674,6 +1637,8 @@ timeTrain.append((end_time-start_time))
 print("LR train TIME: ", (end_time-start_time), " seconds")
 print()
 
+# %%
+
 start_time = time.time()
 sTrain, prfClassFish, prfClassNonFish, prfMacro, sTest, timep = decision_tree(
     x, y, x_test, y_test)
@@ -1688,19 +1653,23 @@ timeTrain.append((end_time-start_time))
 print("DT train TIME: ", (end_time-start_time), " seconds")
 print()
 
+# %%
+
 start_time = time.time()
-sTrain, prfClassFish, prfClassNonFish, prfMacro, sTest, timep = svm(x, y, x_test, y_test)
+sTrain, prfClassFish, prfClassNonFish, prfMacro, sTest, timep = svm(
+    x, y, x_test, y_test)
 end_time = time.time()
-scoreTrain.append  ( sTrain          )
-classFish.append   ( prfClassFish    )
-classNonFish.append( prfClassNonFish )
-scoreMacro.append  ( prfMacro  )
-scoreTest.append   ( sTest     )
-timePrediction.append( timep   )
+scoreTrain.append(sTrain)
+classFish.append(prfClassFish)
+classNonFish.append(prfClassNonFish)
+scoreMacro.append(prfMacro)
+scoreTest.append(sTest)
+timePrediction.append(timep)
 timeTrain.append((end_time-start_time))
-print("SVM train TIME: ", (end_time-start_time), " seconds" )
+print("SVM train TIME: ", (end_time-start_time), " seconds")
 print()
 
+# %%
 
 start_time = time.time()
 sTrain, prfClassFish, prfClassNonFish, prfMacro, sTest, timep = random_forest(
@@ -1716,6 +1685,7 @@ timeTrain.append((end_time-start_time))
 print("RF train TIME: ", (end_time-start_time), " seconds")
 print()
 
+# %%
 
 start_time = time.time()
 sTrain, prfClassFish, prfClassNonFish, prfMacro, sTest, timep = nn(
@@ -1730,6 +1700,8 @@ timePrediction.append(timep)
 timeTrain.append((end_time-start_time))
 print("NN train TIME: ", (end_time-start_time), " seconds")
 print()
+
+# %%
 
 ########################
 # Raw-based data models
@@ -1748,6 +1720,8 @@ timeTrain.append((end_time-start_time))
 print("CNN train TIME: ", (end_time-start_time), " seconds")
 print()
 
+# %%
+
 start_time = time.time()
 sTrain, prfClassFish, prfClassNonFish, prfMacro, sTest, timep = rnn(
     trajs_fishing, trajs_no_fishing, epochs)
@@ -1762,6 +1736,8 @@ timeTrain.append((end_time-start_time))
 print("RNN train TIME: ", (end_time-start_time), " seconds")
 print()
 
+# %%
+
 #################
 # Print Results
 #################
@@ -1775,35 +1751,36 @@ print("Non Fishing Trajectories Test: ", val_count[1])
 
 print("\n** Using Trajectory-based Data")
 print("Logistic Regression Accuracy :",
-      scoreTrain[0],  "Recall, Precision, F1: ", scoreMacro[0])
+      scoreTrain[0],  "Precision, Recall, F1: ", scoreMacro[0])
 print("Decision Tree Accuracy       :",
-      scoreTrain[1],  "Recall, Precision, F1: ", scoreMacro[1])
-print("SVM Accuracy                 :", scoreTrain[2], "Recall, Precision, F1: ", prfMacro[2] )
+      scoreTrain[1],  "Precision, Recall, F1: ", scoreMacro[1])
+print("SVM Accuracy                 :",
+      scoreTrain[2], "Precision, Recall, F1: ", prfMacro[2])
 print("RF Accuracy                  :",
-      scoreTrain[3],  "Recall, Precision, F1: ", scoreMacro[3])
+      scoreTrain[3],  "Precision, Recall, F1: ", scoreMacro[3])
 print("Neural Network Accuracy      :",
-      scoreTrain[4],  "Recall, Precision, F1: ", scoreMacro[4])
+      scoreTrain[4],  "Precision, Recall, F1: ", scoreMacro[4])
 print("\n** Using Raw Data")
 print("Convolutional Neural Network :",
-      scoreTrain[5], "Recall, Precision, F1: ", scoreMacro[5])
+      scoreTrain[5], "Precision, Recall, F1: ", scoreMacro[5])
 print("Recurrent Neural Network     :",
-      scoreTrain[6], "Recall, Precision, F1: ", scoreMacro[6])
+      scoreTrain[6], "Precision, Recall, F1: ", scoreMacro[6])
 print("\n*******************\n\n")
 
 # TODO
-# Graphic with resuts and table!!!!
+# Graphic with results and table!!!!
 d = models.copy()
 for k, i in models.items():
     d[k] = np.array(classFish[i])
 
 df_graf_fish = pd.DataFrame(
-    d, index=['Recall', 'Precision', 'F1', 'Support'])
+    d, index=['Precision', 'Recall', 'F1', 'Support'])
 df_graf_fish.loc["Accuracy"] = scoreTest
 df_graf_fish.loc["Time Prediction"] = timePrediction
 hv = df_graf_fish[
     (df_graf_fish.index != 'Support') &
     (df_graf_fish.index != 'Time Prediction')
-].hvplot.bar(rot=90, title='Fishing Class', height=800, width=1400 )
+].hvplot.bar(rot=90, title='Fishing Class', height=800, width=1400)
 hvplot.save(hv, 'class_fishing.png')
 
 print("Fishing Class")
@@ -1814,7 +1791,7 @@ for k, i in models.items():
     d[k] = np.array(classNonFish[i])
 
 df_graf_nonfish = pd.DataFrame(
-    d, index=['Recall', 'Precision', 'F1', 'Support'])
+    d, index=['Precision', 'Recall',  'F1', 'Support'])
 df_graf_nonfish.loc["Accuracy"] = scoreTest
 df_graf_nonfish.loc["Time Prediction"] = timePrediction
 hv = df_graf_nonfish[
@@ -1841,33 +1818,34 @@ d = models.copy()
 for k, i in models.items():
     d[k] = np.array(scoreMacro[i])
 df_score_macro = pd.DataFrame(
-    d, index=['Recall', 'Precision', 'F1', 'Support'])
+    d, index=['Precision', 'Recall',  'F1', 'Support'])
 
 print("\nScore Macro")
 print(df_score_macro)
 
-## save table images
-import dataframe_image as dfi
+# save table images
 
 df_styled = df_graf_fish[
-    (df_graf_fish.index != 'Support') 
-    ].T[['Precision', 'Recall', 'F1', 'Accuracy', 'Time Prediction']].style.background_gradient().set_table_styles([dict(selector='th', props=[('text-align', 'center')])]) #adding a gradient based on values in cell
+    (df_graf_fish.index != 'Support')
+].T[['Precision', 'Recall', 'F1', 'Accuracy', 'Time Prediction']].style.background_gradient().set_table_styles([dict(selector='th', props=[('text-align', 'center')])])  # adding a gradient based on values in cell
 df_styled.set_properties(**{'text-align': 'center'})
-dfi.export(df_styled,"table_fishing_class.png", dpi=500)
+dfi.export(df_styled, "table_fishing_class.png", dpi=500)
 
 df_styled = df_graf_nonfish[
-    (df_graf_nonfish.index != 'Support') 
-    ].T[['Precision', 'Recall', 'F1', 'Accuracy', 'Time Prediction']].style.background_gradient().set_table_styles([dict(selector='th', props=[('text-align', 'center')])]) #adding a gradient based on values in cell
+    (df_graf_nonfish.index != 'Support')
+].T[['Precision', 'Recall', 'F1', 'Accuracy', 'Time Prediction']].style.background_gradient().set_table_styles([dict(selector='th', props=[('text-align', 'center')])])  # adding a gradient based on values in cell
 df_styled.set_properties(**{'text-align': 'center'})
-dfi.export(df_styled,"table_nonfishing_class.png", dpi=500)
+dfi.export(df_styled, "table_nonfishing_class.png", dpi=500)
 
-df_styled = df_score_train.T.style.background_gradient().set_table_styles([dict(selector='th', props=[('text-align', 'center')])]) #adding a gradient based on values in cell
+df_styled = df_score_train.T.style.background_gradient().set_table_styles(
+    [dict(selector='th', props=[('text-align', 'center')])])  # adding a gradient based on values in cell
 df_styled.set_properties(**{'text-align': 'center'})
-dfi.export(df_styled,"table_score_train.png", dpi=500)
+dfi.export(df_styled, "table_score_train.png", dpi=500)
 
-df_styled = df_score_macro.T[['Precision', 'Recall', 'F1', 'Support']].style.background_gradient().set_table_styles([dict(selector='th', props=[('text-align', 'center')])]) #adding a gradient based on values in cell
+df_styled = df_score_macro.T[['Precision', 'Recall', 'F1', 'Support']].style.background_gradient().set_table_styles(
+    [dict(selector='th', props=[('text-align', 'center')])])  # adding a gradient based on values in cell
 df_styled.set_properties(**{'text-align': 'center'})
-dfi.export(df_styled,"table_score_macro.png", dpi=500)
+dfi.export(df_styled, "table_score_macro.png", dpi=500)
 
 # # # Sample Images
 
