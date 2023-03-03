@@ -1622,7 +1622,7 @@ gdf_only_fishing, gdf_no_fishing, gdf_filtered = filter_gdf(
 
 # transform gdf in moving pandas trajectories. Or load from file the prior built.
 trajs_fishing, trajs_no_fishing = load_or_build_trajectories(
-    len_gdf_only_fishing, load_trajectories_collection_from_file=True)
+    len_gdf_only_fishing, load_trajectories_collection_from_file=False)
 
 # we have 12K fishing trajectories and 108K non fishing trajectories
 # limit trajs non fishing to avoid waste unnecessary processing; <-------------------
@@ -1678,7 +1678,7 @@ timePrediction = []
 timeTrain = []
 
 # number of epochs to train NN, CNN and RNN
-epochs = 100
+epochs = 1
 
 ###############################
 # Trajectory-based data models
