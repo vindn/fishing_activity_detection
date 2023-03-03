@@ -18,7 +18,7 @@ This is a comparison model that detects fishing vessel activity in an AIS datase
 
 ## Training
 
-1. Fisrtval, uncompress dataset_fishing_train.csv.zip 
+1. Fisrtval, uncompress dataset_fishing_train.csv.zip to dataset_fishing_train.csv
 2. Starting training with: python fishing_activity_detection_exec.py
 3. After the first execution, you built the trajectories and saved them in the objects folder. You can load trajectories from files rather than rebuilding them all by setting load_trajectories_collection_from_file=True.
 3. You can do the same for load_images_dataset=True if you don't wish to build all images for CNN again.
